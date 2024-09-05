@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" output="target/classes" path="src/main/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry excluding="**" kind="src" output="target/classes" path="src/main/resources">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="optional" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" output="target/test-classes" path="src/test/java">
+		<attributes>
+			<attribute name="test" value="true"/>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry excluding="**" kind="src" output="target/test-classes" path="src/test/resources">
+		<attributes>
+			<attribute name="test" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="optional" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="src/main/java/lib/JMaterial.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/JMthos.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/TimingFramework-0.55.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/swingx-1.6.1.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/NefAnimacion_V2.1_jdk18.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/timingframework-core-6.1.0.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/timingframework-swing-6.1.0.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/log4j-core-2.23.1.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/log4j-api-2.23.1.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/sqlite-jdbc-3.46.1.0.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/slf4j-api-1.7.12.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/slf4j-simple-1.7.12.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/commons-codec-1.15.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/commons-collections4-4.4.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/commons-compress-1.21.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/commons-io-2.11.0.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/commons-math3-3.6.1.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/curvesapi-1.07.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/log4j-api-2.18.0.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/poi-5.2.3.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/poi-ooxml-5.2.3.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/poi-ooxml-lite-5.2.3.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/poi-ooxml-schemas-4.1.2.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/SparseBitSet-1.2.jar"/>
+	<classpathentry kind="lib" path="src/main/java/lib/xmlbeans-5.1.1.jar"/>
+	<classpathentry kind="output" path="target/classes"/>
+</classpath>
