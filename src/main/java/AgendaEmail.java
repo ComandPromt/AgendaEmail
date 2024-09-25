@@ -6,6 +6,8 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -40,11 +43,16 @@ import com.about.Sobre;
 import com.buttons.animated.EffectButton;
 import com.comboBox.comboSuggestion.ComboBoxSuggestion;
 import com.copy.textarea.CopyTextArea;
+import com.dialog.confirm.MessageDialog;
+import com.dialog.confirm.MessageDialog.MessageType;
 import com.dialog.popup.MaterialJOptionPane;
+import com.dialog.popup.VentanaEmergente;
 import com.draganddrop.DragAndDrop;
 import com.draganddrop.UtilDragAndDrop;
 import com.jicons.Ojo;
+import com.jicons.Reload;
 import com.layout.MaterialPanelLayout;
+import com.message.alerts.PopupAlerts;
 import com.panels.others.CopyPanel;
 import com.textField.text.NTextField;
 
@@ -80,6 +88,34 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 	private String rutaDb;
 
+	private JLabel update;
+
+	private int identificador;
+
+	private void verDatosSeleccionados() {
+
+		try {
+
+			ArrayList<String> datosLista = JMthos.selectSqlite(rutaDb,
+					"SELECT ID,EMAILS,ASUNTO,MENSAJE FROM PERFILES WHERE NOMBRE='" + combo.getSelectedItem().toString()
+							+ "'");
+
+			textField.setText(datosLista.get(1));
+
+			textField_1.setText(datosLista.get(2));
+
+			panel3.setText(datosLista.get(3));
+
+			identificador = Integer.parseInt(datosLista.get(0));
+
+		}
+
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
 	public static void insertSQLite(String db, String table, List<String> columns, List<String> values) {
 
 		try (Connection conn = DriverManager.getConnection("jdbc:sqlite:" + db);
@@ -106,7 +142,32 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 	}
 
-	public static Set<String> readEmailsFromExcel(String filePath) {
+	private static int findLocalidadColumnIndex(XSSFSheet sheet) {
+
+		Row headerRow = sheet.getRow(0);
+
+		if (headerRow == null) {
+
+			return -1;
+
+		}
+
+		for (Cell cell : headerRow) {
+
+			if (cell.getCellType() == CellType.STRING
+					&& "Localidad".equalsIgnoreCase(cell.getStringCellValue().trim())) {
+
+				return cell.getColumnIndex();
+
+			}
+
+		}
+
+		return -1;
+
+	}
+
+	public static Set<String> readEmailsFromExcel(String filePath, ArrayList<String> lista) {
 
 		Set<String> emailSet = new HashSet<>();
 
@@ -114,17 +175,86 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 			XSSFSheet sheet = workbook.getSheetAt(0);
 
+			int emailColumnIndex = findEmailColumnIndex(sheet, 0);
+
+			Cell emailCell;
+
+			String email;
+
+			boolean empty = false;
+
+			if (lista == null) {
+
+				empty = true;
+
+			}
+
+			else {
+
+				empty = lista.isEmpty();
+
+			}
+
+			Cell localidadCell;
+
+			String localidad;
+
+			int localidadColumnIndex = 0;
+
+			if (!empty) {
+
+				localidadColumnIndex = findLocalidadColumnIndex(sheet);
+
+			}
+
 			for (Row row : sheet) {
 
-				Cell emailCell = row.getCell(10);
+				emailCell = row.getCell(emailColumnIndex);
 
-				if (emailCell != null && emailCell.getCellType() == CellType.STRING) {
+				if (empty) {
 
-					String email = emailCell.getStringCellValue().trim();
+					if (emailCell != null && emailCell.getCellType() == CellType.STRING) {
 
-					if (!email.isEmpty() && !email.equals("E-mail")) {
+						email = emailCell.getStringCellValue().trim();
 
-						emailSet.add(email);
+						if (!email.isEmpty() && !email.equals("E-mail")) {
+
+							emailSet.add(email);
+
+						}
+
+					}
+
+				}
+
+				else {
+
+					emailCell = row.getCell(emailColumnIndex);
+
+					localidadCell = row.getCell(localidadColumnIndex);
+
+					if (emailCell != null && emailCell.getCellType() == CellType.STRING) {
+
+						email = emailCell.getStringCellValue().trim();
+
+						if (localidadCell != null && localidadCell.getCellType() == CellType.STRING) {
+
+							localidad = localidadCell.getStringCellValue().trim();
+
+						}
+
+						else {
+
+							localidad = "";
+
+						}
+
+						if (!email.isEmpty() && !email.equals("E-mail") && !lista.contains(email)
+								&& !lista.contains(localidad)) {
+
+							emailSet.add(email);
+
+						}
 
 					}
 
@@ -142,7 +272,36 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 	}
 
+	private static int findEmailColumnIndex(XSSFSheet sheet, int headerRowIndex) {
+
+		Row headerRow = sheet.getRow(headerRowIndex);
+
+		if (headerRow != null) {
+
+			for (int i = 0; i <= 10; i++) {
+
+				Cell headerCell = headerRow.getCell(i);
+
+				if (headerCell != null && headerCell.getCellType() == CellType.STRING) {
+
+					if (headerCell.getStringCellValue().trim().equalsIgnoreCase("E-mail")) {
+
+						return i;
+					}
+
+				}
+
+			}
+
+		}
+
+		return -1;
+
+	}
+
 	public AgendaEmail() {
+
+		identificador = -1;
 
 		try {
 
@@ -154,13 +313,69 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 		}
 
+		textField_1 = new NTextField();
+
+		textField = new NTextField();
+
+		update = new JLabel("");
+
 		combo = new ComboBoxSuggestion<String>();
 
-		ArrayList<String> columnsLista = new ArrayList<>();
+		panel3 = new CopyTextArea(false, false, false, false);
 
-		columnsLista.add("NOMBRE");
+		update.addMouseListener(new MouseAdapter() {
 
-		ArrayList<String> datosLista = JMthos.selectSQlite(rutaDb, "SELECT NOMBRE FROM PERFILES", columnsLista);
+			@Override
+
+			public void mousePressed(MouseEvent e) {
+
+				String dato1 = textField.getText().trim();
+
+				String dato2 = textField_1.getText().trim();
+
+				String dato3 = panel3.getText().trim();
+
+				if (!dato1.isEmpty() && !dato2.isEmpty() && !dato3.isEmpty()) {
+
+					ArrayList<String> lista = new ArrayList<>();
+
+					lista.add("EMAILS");
+
+					lista.add("ASUNTO");
+
+					lista.add("MENSAJE");
+
+					ArrayList<String> valores = new ArrayList<>();
+
+					valores.add(dato1);
+
+					valores.add(dato2);
+
+					valores.add(dato3);
+
+					JMthos.updateSqlite(rutaDb, "PERFILES", lista, valores, "ID=" + identificador);
+
+					new PopupAlerts(600, 300).mensaje("Perfil actualizado correctamente");
+
+				}
+
+			}
+
+		});
+
+		combo.addItemListener(new ItemListener() {
+
+			public void itemStateChanged(ItemEvent e) {
+
+				verDatosSeleccionados();
+
+			}
+
+		});
+
+		combo.setFont(new Font("Dialog", Font.PLAIN, 30));
+
+		ArrayList<String> datosLista = JMthos.selectSqlite(rutaDb, "SELECT NOMBRE FROM PERFILES");
 
 		for (String valor : datosLista) {
 
@@ -184,15 +399,22 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 					if (numeroCombo > 0) {
 
-						valorSeleccionado = combo.getSelectedItem().toString();
+						MessageDialog dialogo = new MessageDialog(0, 0, null, null, "",
+								"¿Realmente desea borrar el perfil seleccionado?");
 
-						combo.removeItemAt(combo.getSelectedIndex());
+						if (dialogo.getMessageType().equals(MessageType.OK)) {
 
-						JMthos.deleteSQLite(rutaDb, "PERFILES", "NOMBRE", valorSeleccionado);
+							valorSeleccionado = combo.getSelectedItem().toString();
 
-						if (numeroCombo == 1) {
+							combo.removeItemAt(combo.getSelectedIndex());
 
-							JMthos.deleteAllFromTableSqlite(rutaDb, "PERFILES");
+							JMthos.deleteSQLite(rutaDb, "PERFILES", "NOMBRE", valorSeleccionado);
+
+							if (numeroCombo == 1) {
+
+								JMthos.deleteAllFromTableSqlite(rutaDb, "PERFILES");
+
+							}
 
 						}
 
@@ -219,31 +441,8 @@ public class AgendaEmail extends javax.swing.JFrame {
 			@Override
 
 			public void mousePressed(MouseEvent e) {
-				try {
-					ArrayList<String> columnsLista = new ArrayList<>();
 
-					columnsLista.add("EMAILS");
-
-					columnsLista.add("ASUNTO");
-
-					columnsLista.add("MENSAJE");
-
-					ArrayList<String> datosLista = JMthos.selectSQlite(rutaDb,
-							"SELECT EMAILS,ASUNTO,MENSAJE FROM PERFILES WHERE NOMBRE='"
-									+ combo.getSelectedItem().toString() + "'",
-							columnsLista);
-
-					textField.setText(datosLista.get(0));
-
-					textField_1.setText(datosLista.get(1));
-
-					panel3.setText(datosLista.get(2));
-
-				}
-
-				catch (Exception e1) {
-
-				}
+				verDatosSeleccionados();
 
 			}
 
@@ -259,13 +458,9 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 		lista = new ArrayList<>();
 
-		textField_1 = new NTextField();
-
 		textField_1.setHeaderText("Asunto");
 
 		textField_1.setColumns(10);
-
-		textField = new NTextField();
 
 		textField.setHeaderText("Destinatarios (poner en Cco)");
 
@@ -289,7 +484,7 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 		panel1 = new JPanel();
 
-		panel1.setBounds(0, 10, 639, 107);
+		panel1.setBounds(0, 0, 639, 107);
 
 		panel2 = new JPanel();
 
@@ -297,9 +492,9 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 		panel2.setBounds(32, 142, 607, 107);
 
-		panel3 = new CopyTextArea(false, false, false, false);
+		panel3.setBorder(null);
 
-		panel3.setBounds(0, 271, 813, 221);
+		panel3.setBounds(0, 313, 813, 198);
 
 		JPanel perfiles = new JPanel();
 
@@ -380,7 +575,8 @@ public class AgendaEmail extends javax.swing.JFrame {
 						};
 
 						MaterialJOptionPane.showCustomInputDialog(null, textField3, buttonOk, buttonCancel, 400, 200,
-								title, label, "Aceptar", "Cancelar", null, callback);
+								title, label, "Aceptar", "Cancelar",
+								new ImageIcon(AgendaEmail.class.getResource("/image/dato.png")), callback);
 
 					}
 
@@ -396,7 +592,7 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 		add.setShadowColor(Color.WHITE);
 
-		add.setBounds(649, 10, 154, 44);
+		add.setBounds(649, 20, 154, 44);
 
 		addComponentListener(new ComponentAdapter() {
 
@@ -410,21 +606,24 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 				panel1.setBounds(0, 0, ancho, Math.round(alto * 0.2f));
 
-				panelTest.setBounds(panelTest.getX(), 0, Math.round(ancho * 0.53f), Math.round(alto * 0.2f));
+				panelTest.setBounds(panelTest.getX(), 0, Math.round(ancho * 0.53f), Math.round(alto * 0.15f));
 
 				panel2.setBounds(0, Math.round(alto * 0.2f), ancho, Math.round(alto * 0.2f));
 
 				panel3.setBounds(0, Math.round(alto * 0.4f), Math.round(ancho * 0.98f), Math.round(alto * 0.3f));
 
-				perfiles.setBounds(0, Math.round(alto * 0.7f), Math.round(ancho * 0.7f), Math.round(alto * 0.17f));
+				perfiles.setBounds(5, Math.round(alto * 0.72f), Math.round(ancho * 0.7f), Math.round(alto * 0.17f));
 
-				add.setBounds(Math.round(ancho * 0.7f) + 5, Math.round(alto * 0.705f) + 5, Math.round(ancho * 0.1f),
+				add.setBounds(Math.round(ancho * 0.7f) + 5, Math.round(alto * 0.725f), Math.round(ancho * 0.06f),
 						Math.round(alto * 0.17f) - 10);
 
-				reload.setBounds(Math.round(ancho * 0.8f), Math.round(alto * 0.705f) + 5, Math.round(ancho * 0.1f),
-						Math.round(alto * 0.17f) - 10);
+				reload.setBounds(Math.round(ancho * 0.75f), Math.round(alto * 0.7f), Math.round(ancho * 0.1f),
+						Math.round(alto * 0.2f));
 
-				delete.setBounds(Math.round(ancho * 0.9f), Math.round(alto * 0.705f) + 5, Math.round(ancho * 0.1f),
+				update.setBounds(Math.round(ancho * 0.84f), Math.round(alto * 0.755f), Math.round(ancho * 0.06f),
+						Math.round(alto * 0.1f));
+
+				delete.setBounds(Math.round(ancho * 0.92f), Math.round(alto * 0.725f), Math.round(ancho * 0.06f),
 						Math.round(alto * 0.17f) - 10);
 
 			}
@@ -455,7 +654,7 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 			drag = new DragAndDrop("Suelte aqui xlsx");
 
-			drag.setBounds(161, 10, 199, 84);
+			drag.setBounds(155, 10, 199, 84);
 
 			new UtilDragAndDrop(drag, drag.dragBorder, true, new UtilDragAndDrop.Listener() {
 
@@ -465,15 +664,33 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 					Set<String> lista = new HashSet<>();
 
+					ArrayList<String> datos = null;
+
+					if (combo.getItemCount() > 0) {
+
+						datos = new ArrayList<>();
+
+						datos = JMthos.selectSqlite(rutaDb,
+								"SELECT R.VALOR FROM RESTRICCIONES R JOIN PR ON R.ID=PR.RESTRICCION JOIN PERFILES P ON P.ID=PR.PERFIL WHERE P.ID="
+										+ identificador);
+
+					}
+
 					for (File f : archivos) {
 
-						lista.addAll(readEmailsFromExcel(f.getAbsolutePath()));
+						lista.addAll(readEmailsFromExcel(f.getAbsolutePath(), datos));
 
 					}
 
 					StringBuilder text = new StringBuilder();
 
 					String coma = "";
+
+					if (!textField.getText().isEmpty()) {
+
+						coma = ",";
+
+					}
 
 					for (String email : lista) {
 
@@ -506,7 +723,7 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 			lblNewLabel_3.setBackground(Color.WHITE);
 
-			lblNewLabel_3.setFont(new Font("Tahoma", Font.PLAIN, 25));
+			lblNewLabel_3.setFont(new Font("Tahoma", Font.PLAIN, 20));
 
 			lblNewLabel_3.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -514,7 +731,7 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 			panel1.add(drag);
 
-			panelTest.setBounds(370, 10, 184, 87);
+			panelTest.setBounds(370, 0, 184, 87);
 
 			panel1.add(panelTest);
 
@@ -550,17 +767,17 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 			JLabel lblNewLabel_2 = new JLabel("Asunto");
 
-			lblNewLabel_2.setBounds(10, 10, 75, 87);
+			lblNewLabel_2.setBounds(10, 35, 75, 90);
 
 			panel2.add(lblNewLabel_2);
 
-			lblNewLabel_2.setFont(new Font("Tahoma", Font.PLAIN, 25));
+			lblNewLabel_2.setFont(new Font("Tahoma", Font.PLAIN, 20));
 
 			lblNewLabel_2.setHorizontalAlignment(SwingConstants.CENTER);
 
 			MaterialPanelLayout panelAsunto = new MaterialPanelLayout(lista, porcentajes, false);
 
-			panelAsunto.setBounds(110, 10, 700, 84);
+			panelAsunto.setBounds(110, 10, 700, 97);
 
 			panel2.add(panelAsunto);
 
@@ -569,18 +786,31 @@ public class AgendaEmail extends javax.swing.JFrame {
 			getContentPane().add(add);
 
 			delete.setBounds(649, 64, 154, 50);
+
 			getContentPane().add(delete);
 
 			reload.setBounds(649, 129, 154, 44);
+
 			getContentPane().add(reload);
 
+			update.setBackground(Color.WHITE);
+
+			update.setIcon(new Reload());
+
+			update.setBounds(649, 183, 154, 55);
+
+			getContentPane().add(update);
+
 			JMenuBar menuBar = new JMenuBar();
+
 			menuBar.setBackground(Color.WHITE);
 
 			setJMenuBar(menuBar);
 
 			JMenuItem mntmNewMenuItem = new JMenuItem("Sobre");
+
 			mntmNewMenuItem.setFont(new Font("Segoe UI", Font.PLAIN, 20));
+
 			mntmNewMenuItem.setBackground(Color.WHITE);
 
 			mntmNewMenuItem.addMouseListener(new MouseAdapter() {
@@ -592,7 +822,8 @@ public class AgendaEmail extends javax.swing.JFrame {
 					try {
 
 						new Sobre("Programa creado por", "Ramón Jesús Gómez Carmona", "ramonjgomezcarmona@gmail.com", 0,
-								0, 0);
+								0, 0, true);
+
 					}
 
 					catch (Exception e1) {
@@ -602,6 +833,37 @@ public class AgendaEmail extends javax.swing.JFrame {
 				}
 
 			});
+
+			JMenuItem mntmNewMenuItem_1 = new JMenuItem("Config");
+
+			mntmNewMenuItem_1.setBackground(Color.WHITE);
+
+			mntmNewMenuItem_1.addMouseListener(new MouseAdapter() {
+
+				@Override
+
+				public void mousePressed(MouseEvent e) {
+
+					try {
+
+						Config config = new Config(rutaDb);
+
+						VentanaEmergente ventana = new VentanaEmergente(frame, config, "Configuración", 800, 450, false,
+								1, new ImageIcon(AgendaEmail.class.getResource("/image/config.png")));
+
+					}
+
+					catch (Exception e1) {
+
+					}
+
+				}
+
+			});
+
+			mntmNewMenuItem_1.setFont(new Font("Segoe UI", Font.PLAIN, 20));
+
+			menuBar.add(mntmNewMenuItem_1);
 
 			menuBar.add(mntmNewMenuItem);
 
@@ -641,7 +903,7 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 		setResizable(false);
 
-		setSize(new Dimension(827, 555));
+		setSize(new Dimension(827, 684));
 
 		setLocationRelativeTo(null);
 
@@ -654,4 +916,5 @@ public class AgendaEmail extends javax.swing.JFrame {
 	public void stateChanged(ChangeEvent e) {
 
 	}
+
 }
