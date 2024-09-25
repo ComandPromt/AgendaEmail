@@ -612,7 +612,7 @@ public class AgendaEmail extends javax.swing.JFrame {
 
 				panel3.setBounds(0, Math.round(alto * 0.4f), Math.round(ancho * 0.98f), Math.round(alto * 0.3f));
 
-				perfiles.setBounds(5, Math.round(alto * 0.72f), Math.round(ancho * 0.7f), Math.round(alto * 0.17f));
+				perfiles.setBounds(5, Math.round(alto * 0.72f), Math.round(ancho * 0.7f), Math.round(alto * 0.16f));
 
 				add.setBounds(Math.round(ancho * 0.7f) + 5, Math.round(alto * 0.725f), Math.round(ancho * 0.06f),
 						Math.round(alto * 0.17f) - 10);
